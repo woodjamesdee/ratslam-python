@@ -45,6 +45,7 @@ from ratslam.visual_odometry import VisualOdometry
 from ratslam.view_cells import ViewCells
 from ratslam.pose_cells import PoseCells
 from ratslam.experience_map import ExperienceMap
+from ratslam.nengo_network import NengoPoseCells
 
 class Ratslam(object):
     '''Ratslam implementation.
@@ -61,6 +62,7 @@ class Ratslam(object):
         self.view_cells = ViewCells()
         self.pose_cells = PoseCells()
         self.experience_map = ExperienceMap()
+        self.nengo_pose_cells = NengoPoseCells(self.pose_cells.get_update_data, self.pose_cells.get_active, filename="weights_complete.npy", perform_inhibition=True)
 
         # TRACKING -------------------------------
         x, y, th = self.visual_odometry.odometry
@@ -70,7 +72,7 @@ class Ratslam(object):
         self.pc = [[x_pc], [y_pc], [th_pc]]
         # ----------------------------------------
 
-    def digest(self, img):
+    def digest(self, img, elapsed_time):
         '''Execute a step of ratslam algorithm for a given image.
 
         :param img: an gray-scale image as a 2D numpy array.
@@ -91,3 +93,7 @@ class Ratslam(object):
         self.pc[1].append(y_pc)
         self.pc[2].append(th_pc)
         # ----------------------------------------
+
+        # Nengo
+        self.nengo_pose_cells.run(elapsed_time)
+

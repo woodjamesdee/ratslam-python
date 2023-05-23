@@ -28,15 +28,51 @@ import numpy as np
 import itertools
 from ratslam._globals import *
 
+def inhibit(t):
+    return 2.0 if t > 0.0 else 0.0
+
 class PoseCells(object):
     '''Pose Cell module.'''
 
-    def __init__(self):
+    def __init__(self, create_model=True, model=None, simulator=None):
         '''Initializes the Pose Cell module.'''
 
         self.cells = np.zeros([PC_DIM_XY, PC_DIM_XY, PC_DIM_TH])
         self.active = a, b, c = [PC_DIM_XY//2, PC_DIM_XY//2, PC_DIM_TH//2]
         self.cells[a, b, c] = 1
+        self.view_cell = None
+        self.vtrans = 0
+        self.vrot = 0
+
+    def flatten_cells(self, t):
+        return self.cells.flatten()
+
+    def get_update_data(self, t):
+        if self.view_cell is None:
+            return 0, 0, 0, 0, self.vtrans, self.vrot
+        
+        return self.view_cell.x_pc, self.view_cell.y_pc, self.view_cell.th_pc, self.view_cell.decay, self.vtrans, self.vrot
+
+    def get_view_cell_x(self, t):
+        return self.get_update_data[0]/PC_DIM_XY*2-1
+
+    def get_view_cell_y(self, t):
+        return self.get_update_data[1]/PC_DIM_XY*2-1
+
+    def get_view_cell_th(self, t):
+        return self.get_update_data[2]/PC_DIM_TH*2-1
+
+    def get_view_cell_decay(self, t):
+        return self.get_update_data[3]
+
+    def get_vtrans(self, t):
+        return self.vtrans
+
+    def get_vrot(self, t):
+        return self.vrot
+
+    def get_active(self, t):
+        return [self.active[0]/PC_DIM_XY*2-1, self.active[1]/PC_DIM_XY*2-1,self.active[2]/PC_DIM_TH*2-1]
 
     def compute_activity_matrix(self, xywrap, thwrap, wdim, pcw): 
         '''Compute the activation of pose cells.'''
@@ -106,6 +142,9 @@ class PoseCells(object):
         :return: a 3D-tuple with the (x, y, th) index of most active pose cell.
         '''
         vtrans = vtrans*POSECELL_VTRANS_SCALING
+        self.vtrans = vtrans
+        self.vrot = vrot
+        self.view_cell = view_cell
 
         # if this isn't a new vt then add the energy at its associated posecell
         # location
