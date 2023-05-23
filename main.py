@@ -45,7 +45,7 @@ import ratslam
 
 if __name__ == '__main__':
     # Change this line to open other movies
-    data = r'/Users/james/School/stlucia_testloop.avi'
+    data = r'/projects/rg_vip_class/neuro/stlucia_testloop.avi'
 
     video = cv2.VideoCapture(data)
     slam = ratslam.Ratslam()
@@ -103,6 +103,34 @@ if __name__ == '__main__':
         #ax.axis([0, 60, 0, 60]);
         #ax.set_zlim(0, 36)
         # -----------------------------
+
+        #plt.plot(sim.trange(), sim.data[inp_p].T[0], c="k", label="Input")
+        #plt.plot(sim.trange(), sim.data[pre_p].T[0], c="b", label="Pre")
+        #plt.plot(sim.trange(), sim.data[post_p].T[0], c="r", label="Post")
+        #plt.ylabel("Dimension 1")
+        #plt.legend(loc="best")
+
+
+        plot.subplot(2, 3, 3)
+        plot.title("X Probes")
+        plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.pre_probe].T[0], c="k", label="Pre")
+        plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.post_probe].T[0], c="b", label="Post")
+        plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.error_probe].T[0], c="r", label="Error")
+        plot.legend(loc="best")
+
+        #plot.subplot(2, 3, 3)
+        #plot.title("Y Probes")
+        #plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.pre_probe].T[1], c="k", label="Pre")
+        #plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.post_probe].T[1], c="b", label="Post")
+        #plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.error_probe].T[1], c="r", label="Error")
+        #plot.legend(loc="best")
+
+        #plot.subplot(2, 3, 3)
+        #plot.title("TH Probes")
+        #plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.pre_probe].T[2], c="k", label="Pre")
+        #plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.post_probe].T[2], c="b", label="Post")
+        #plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.error_probe].T[2], c="r", label="Error")
+        #plot.legend(loc="best")
 
         # EXPERIENCE MAP --------------
         plot.subplot(2, 2, 4)
