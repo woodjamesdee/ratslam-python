@@ -53,17 +53,20 @@ class PoseCells(object):
             #self.x_input = nengo.Node(self)
 
             # Ensembles
-            self.pre_ensemble = nengo.Ensemble(PC_DIM_XY * PC_DIM_XY * PC_DIM_TH, dimensions=3)
-            self.post_ensemble = nengo.Ensemble(PC_DIM_XY * PC_DIM_XY * PC_DIM_TH, dimensions=3)
-            self.error_ensemble = nengo.Ensemble(PC_DIM_XY * PC_DIM_XY * PC_DIM_TH, dimensions=3)
+            self.pre_ensemble = nengo.Ensemble(PC_DIM_XY * PC_DIM_XY * PC_DIM_TH, dimensions=PC_DIM_XY * PC_DIM_XY * PC_DIM_TH)
+            self.post_ensemble = nengo.Ensemble(PC_DIM_XY * PC_DIM_XY * PC_DIM_TH, dimensions=PC_DIM_XY * PC_DIM_XY * PC_DIM_TH)
+            self.error_ensemble = nengo.Ensemble(PC_DIM_XY * PC_DIM_XY * PC_DIM_TH, dimensions=PC_DIM_XY * PC_DIM_XY * PC_DIM_TH)
 
             # Probes
+            self.input_probe = nengo.Probe(self.cells_input)
             self.pre_probe = nengo.Probe(self.pre_ensemble, synapse=0.01)
             self.post_probe = nengo.Probe(self.post_ensemble, synapse=0.01)
             self.error_probe = nengo.Probe(self.error_ensemble, synapse=0.03)
 
             # Input to pose cell network
-            weight_matrix = [[1,1,1,1,1,1], [1,1,1,1,1,1], [1,1,1,1,1,1]]
+            #weight_matrix = [[1,1,1,1,1,1], [1,1,1,1,1,1], [1,1,1,1,1,1]]
+            #weight_matrix = [[1,1,1,1,1,1]]
+            weight_matrix = [[1,1,1,1,1,1]]*(PC_DIM_XY * PC_DIM_XY * PC_DIM_TH)
             self.input_pre_connection = nengo.Connection(self.update_input, self.pre_ensemble, transform=weight_matrix)
 
             # Learning rule connection between pre and post ensembles
@@ -72,10 +75,12 @@ class PoseCells(object):
             self.pre_post_connection.learning_rule_type = nengo.PES(learning_rate=3e-4)
 
             # Connect error ensemble to connection rule (PES)
+            #self.error_signal_connection = nengo.Connection(self.error_ensemble, self.pre_post_connection.learning_rule, transform=[[1]*(PC_DIM_XY * PC_DIM_XY * PC_DIM_TH)])
             self.error_signal_connection = nengo.Connection(self.error_ensemble, self.pre_post_connection.learning_rule)
 
             # Compute error: actual - target = post - self.cells, this will get minimized
-            self.cells_input_connection = nengo.Connection(self.cells_input, self.error_ensemble, transform=[[-1]*133956, [-1]*133956, [-1]*133956])
+            self.cells_input_connection = nengo.Connection(self.cells_input, self.error_ensemble, transform=-1)
+            #self.post_error_connection = nengo.Connection(self.post_ensemble, self.error_ensemble, transform=[[1]*(PC_DIM_XY * PC_DIM_XY * PC_DIM_TH)])
             self.post_error_connection = nengo.Connection(self.post_ensemble, self.error_ensemble)
 
             # Simulator

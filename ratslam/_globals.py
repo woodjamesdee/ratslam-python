@@ -107,8 +107,8 @@ def compare_segments(seg1, seg2, slen):
 # CONSTANTS AND ALGORITHM PARAMETERS ==========================================
 # NOTE: it is need a refactoring to set these variables as a model parameter
 PC_VT_INJECT_ENERGY     = 0.1
-PC_DIM_XY               = 61
-PC_DIM_TH               = 36
+PC_DIM_XY               = 10
+PC_DIM_TH               = 6
 PC_W_E_VAR              = 1
 PC_W_E_DIM              = 7
 PC_W_I_VAR              = 2
