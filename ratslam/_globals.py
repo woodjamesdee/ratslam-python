@@ -67,7 +67,7 @@ def create_pc_weights(dim, var):
     dim_center = int(np.floor(dim/2.))
     
     weight = np.zeros([dim, dim, dim])
-    for x, y, z in itertools.product(xrange(dim), xrange(dim), xrange(dim)):
+    for x, y, z in itertools.product(range(dim), range(dim), range(dim)):
         dx = -(x-dim_center)**2
         dy = -(y-dim_center)**2
         dz = -(z-dim_center)**2
@@ -85,7 +85,7 @@ def compare_segments(seg1, seg2, slen):
 
     diffs = np.zeros(slen)
 
-    for offset in xrange(slen+1):
+    for offset in range(slen+1):
         e = (cwl-offset)
 
         cdiff = np.abs(seg1[offset:cwl] - seg2[:e])
@@ -119,21 +119,21 @@ PC_W_INHIB              = create_pc_weights(PC_W_I_DIM, PC_W_I_VAR)
 PC_W_E_DIM_HALF         = int(np.floor(PC_W_E_DIM/2.))
 PC_W_I_DIM_HALF         = int(np.floor(PC_W_I_DIM/2.))
 PC_C_SIZE_TH            = (2.*np.pi)/PC_DIM_TH
-PC_E_XY_WRAP            = range(PC_DIM_XY-PC_W_E_DIM_HALF, PC_DIM_XY) + range(PC_DIM_XY) + range(PC_W_E_DIM_HALF)
-PC_E_TH_WRAP            = range(PC_DIM_TH-PC_W_E_DIM_HALF, PC_DIM_TH) + range(PC_DIM_TH) + range(PC_W_E_DIM_HALF)
-PC_I_XY_WRAP            = range(PC_DIM_XY-PC_W_I_DIM_HALF, PC_DIM_XY) + range(PC_DIM_XY) + range(PC_W_I_DIM_HALF)
-PC_I_TH_WRAP            = range(PC_DIM_TH-PC_W_I_DIM_HALF, PC_DIM_TH) + range(PC_DIM_TH) + range(PC_W_I_DIM_HALF)            
+PC_E_XY_WRAP            = list(range(PC_DIM_XY-PC_W_E_DIM_HALF, PC_DIM_XY)) + list(range(PC_DIM_XY)) + list(range(PC_W_E_DIM_HALF))
+PC_E_TH_WRAP            = list(range(PC_DIM_TH-PC_W_E_DIM_HALF, PC_DIM_TH)) + list(range(PC_DIM_TH)) + list(range(PC_W_E_DIM_HALF))
+PC_I_XY_WRAP            = list(range(PC_DIM_XY-PC_W_I_DIM_HALF, PC_DIM_XY)) + list(range(PC_DIM_XY)) + list(range(PC_W_I_DIM_HALF))
+PC_I_TH_WRAP            = list(range(PC_DIM_TH-PC_W_I_DIM_HALF, PC_DIM_TH)) + list(range(PC_DIM_TH)) + list(range(PC_W_I_DIM_HALF))          
 PC_XY_SUM_SIN_LOOKUP    = np.sin(np.multiply(range(1, PC_DIM_XY+1), (2*np.pi)/PC_DIM_XY))
 PC_XY_SUM_COS_LOOKUP    = np.cos(np.multiply(range(1, PC_DIM_XY+1), (2*np.pi)/PC_DIM_XY))
 PC_TH_SUM_SIN_LOOKUP    = np.sin(np.multiply(range(1, PC_DIM_TH+1), (2*np.pi)/PC_DIM_TH))
 PC_TH_SUM_COS_LOOKUP    = np.cos(np.multiply(range(1, PC_DIM_TH+1), (2*np.pi)/PC_DIM_TH))
-PC_CELLS_TO_AVG         = 3;
-PC_AVG_XY_WRAP          = range(PC_DIM_XY-PC_CELLS_TO_AVG, PC_DIM_XY) + range(PC_DIM_XY) + range(PC_CELLS_TO_AVG)
-PC_AVG_TH_WRAP          = range(PC_DIM_TH-PC_CELLS_TO_AVG, PC_DIM_TH) + range(PC_DIM_TH) + range(PC_CELLS_TO_AVG)
+PC_CELLS_TO_AVG         = 3
+PC_AVG_XY_WRAP          = list(range(PC_DIM_XY-PC_CELLS_TO_AVG, PC_DIM_XY)) + list(range(PC_DIM_XY)) + list(range(PC_CELLS_TO_AVG))
+PC_AVG_TH_WRAP          = list(range(PC_DIM_TH-PC_CELLS_TO_AVG, PC_DIM_TH)) + list(range(PC_DIM_TH)) + list(range(PC_CELLS_TO_AVG))
 IMAGE_Y_SIZE            = 640
 IMAGE_X_SIZE            = 480
-IMAGE_VT_Y_RANGE        = slice((480/2 - 80 - 40), (480/2 + 80 - 40))
-IMAGE_VT_X_RANGE        = slice((640/2 - 280 + 15), (640/2 + 280 + 15))
+IMAGE_VT_Y_RANGE        = slice((480//2 - 80 - 40), (480//2 + 80 - 40))
+IMAGE_VT_X_RANGE        = slice((640//2 - 280 + 15), (640//2 + 280 + 15))
 IMAGE_VTRANS_Y_RANGE    = slice(270, 430)
 IMAGE_VROT_Y_RANGE      = slice(75, 240)
 IMAGE_ODO_X_RANGE       = slice(180+15, 460+15)

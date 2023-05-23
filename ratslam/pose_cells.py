@@ -35,7 +35,7 @@ class PoseCells(object):
         '''Initializes the Pose Cell module.'''
 
         self.cells = np.zeros([PC_DIM_XY, PC_DIM_XY, PC_DIM_TH])
-        self.active = a, b, c = [PC_DIM_XY/2, PC_DIM_XY/2, PC_DIM_TH/2]
+        self.active = a, b, c = [PC_DIM_XY//2, PC_DIM_XY//2, PC_DIM_TH//2]
         self.cells[a, b, c] = 1
 
     def compute_activity_matrix(self, xywrap, thwrap, wdim, pcw): 
@@ -48,7 +48,7 @@ class PoseCells(object):
         # for nonzero posecell values  
         indices = np.nonzero(self.cells)
 
-        for i,j,k in itertools.izip(*indices):
+        for i,j,k in zip(*indices):
             pca_new[np.ix_(xywrap[i:i+wdim], 
                            xywrap[j:j+wdim],
                            thwrap[k:k+wdim])] += self.cells[i,j,k]*pcw
@@ -154,7 +154,7 @@ class PoseCells(object):
         # Path Integration
         # vtrans affects xy direction
         # shift in each th given by the th
-        for dir_pc in xrange(PC_DIM_TH): 
+        for dir_pc in range(PC_DIM_TH): 
             direction = np.float64(dir_pc-1) * PC_C_SIZE_TH
             # N,E,S,W are straightforward
             if (direction == 0):

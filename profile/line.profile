@@ -15,7 +15,7 @@ Line #      Hits         Time  Per Hit   % Time  Line Contents
     85                                           
     86         3           48     16.0      0.1      diffs = np.zeros(slen)
     87                                           
-    88       306         1267      4.1      2.7      for offset in xrange(slen+1):
+    88       306         1267      4.1      2.7      for offset in range(slen+1):
     89       303         1315      4.3      2.8          e = (cwl-offset)
     90                                           
     91       303         6251     20.6     13.5          cdiff = np.abs(seg1[offset:cwl] - seg2[:e])

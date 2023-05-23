@@ -52,7 +52,7 @@ Use it with RunSnakeRun [1]_ and Line Profiler [2]_.
 '''
 
 def main():
-    data = r'D:\Bkp\ratslam\data\stlucia_testloop.avi'
+    data = r'/Users/james/School/stlucia_testloop.avi'
 
     video = cv2.VideoCapture(data)
     slam = ratslam.Ratslam()
@@ -69,7 +69,8 @@ def main():
         
         # break
 
-        if loop%100 == 0: print '%0.2f%%'%(100*loop/1000.)
+        if loop%100 == 0: 
+          print('%0.2f%%'%(100*loop/1000.))
 
 import cProfile
 command = """main()"""
