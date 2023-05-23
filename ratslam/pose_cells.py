@@ -27,6 +27,7 @@
 import numpy as np
 import itertools
 from ratslam._globals import *
+import nengo
 
 class PoseCells(object):
     '''Pose Cell module.'''
@@ -37,6 +38,75 @@ class PoseCells(object):
         self.cells = np.zeros([PC_DIM_XY, PC_DIM_XY, PC_DIM_TH])
         self.active = a, b, c = [PC_DIM_XY//2, PC_DIM_XY//2, PC_DIM_TH//2]
         self.cells[a, b, c] = 1
+        self.view_cell = None
+        self.vtrans = 0
+        self.vrot = 0
+
+        # Nengo Model
+        self.model = nengo.Network()
+
+        with self.model:
+
+            # Nodes for inputs
+            self.cells_input = nengo.Node(self.flatten_cells)
+            self.update_input = nengo.Node(self.get_update_data)
+            #self.x_input = nengo.Node(self)
+
+            # Ensembles
+            self.pre_ensemble = nengo.Ensemble(PC_DIM_XY * PC_DIM_XY * PC_DIM_TH, dimensions=3)
+            self.post_ensemble = nengo.Ensemble(PC_DIM_XY * PC_DIM_XY * PC_DIM_TH, dimensions=3)
+            self.error_ensemble = nengo.Ensemble(PC_DIM_XY * PC_DIM_XY * PC_DIM_TH, dimensions=3)
+
+            # Probes
+            self.pre_probe = nengo.Probe(self.pre_ensemble, synapse=0.01)
+            self.post_probe = nengo.Probe(self.post_ensemble, synapse=0.01)
+            self.error_probe = nengo.Probe(self.error_ensemble, synapse=0.03)
+
+            # Input to pose cell network
+            weight_matrix = [[1,1,1,1,1,1], [1,1,1,1,1,1], [1,1,1,1,1,1]]
+            self.input_pre_connection = nengo.Connection(self.update_input, self.pre_ensemble, transform=weight_matrix)
+
+            # Learning rule connection between pre and post ensembles
+            #weight_matrix = [[1,1,1,1,1,1], [1,1,1,1,1,1], [1,1,1,1,1,1]]
+            self.pre_post_connection = nengo.Connection(self.pre_ensemble, self.post_ensemble)
+            self.pre_post_connection.learning_rule_type = nengo.PES(learning_rate=3e-4)
+
+            # Connect error ensemble to connection rule (PES)
+            self.error_signal_connection = nengo.Connection(self.error_ensemble, self.pre_post_connection.learning_rule)
+
+            # Compute error: actual - target = post - self.cells, this will get minimized
+            self.cells_input_connection = nengo.Connection(self.cells_input, self.error_ensemble, transform=[[-1]*133956, [-1]*133956, [-1]*133956])
+            self.post_error_connection = nengo.Connection(self.post_ensemble, self.error_ensemble)
+
+            # Simulator
+            self.simulator = nengo.Simulator(self.model)
+
+    def flatten_cells(self, t):
+        return self.cells.flatten()
+
+    def get_update_data(self, t):
+        if self.view_cell is None:
+            return 0, 0, 0, 0, self.vtrans, self.vrot
+        
+        return self.view_cell.x_pc, self.view_cell.y_pc, self.view_cell.th_pc, self.view_cell.decay, self.vtrans, self.vrot
+
+    def get_view_cell_x(self, t):
+        return self.get_update_data[0]
+
+    def get_view_cell_y(self, t):
+        return self.get_update_data[1]
+
+    def get_view_cell_th(self, t):
+        return self.get_update_data[2]
+
+    def get_view_cell_decay(self, t):
+        return self.get_update_data[3]
+
+    def get_vtrans(self, t):
+        return self.vtrans
+
+    def get_vrot(self, t):
+        return self.vrot
 
     def compute_activity_matrix(self, xywrap, thwrap, wdim, pcw): 
         '''Compute the activation of pose cells.'''
@@ -106,6 +176,9 @@ class PoseCells(object):
         :return: a 3D-tuple with the (x, y, th) index of most active pose cell.
         '''
         vtrans = vtrans*POSECELL_VTRANS_SCALING
+        self.vtrans = vtrans
+        self.vrot = vrot
+        self.view_cell = view_cell
 
         # if this isn't a new vt then add the energy at its associated posecell
         # location

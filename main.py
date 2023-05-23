@@ -49,6 +49,8 @@ if __name__ == '__main__':
 
     video = cv2.VideoCapture(data)
     slam = ratslam.Ratslam()
+    fps = video.get(cv2.CAP_PROP_FPS)
+    time_per_frame = 1/fps
     
     loop = 0
     _, frame = video.read()
@@ -60,7 +62,7 @@ if __name__ == '__main__':
         if frame is None: break
 
         img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        slam.digest(img)
+        slam.digest(img, time_per_frame)
         # ==========================================================
 
         # Plot each 50 frames

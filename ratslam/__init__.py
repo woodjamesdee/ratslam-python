@@ -70,7 +70,7 @@ class Ratslam(object):
         self.pc = [[x_pc], [y_pc], [th_pc]]
         # ----------------------------------------
 
-    def digest(self, img):
+    def digest(self, img, elapsed_time):
         '''Execute a step of ratslam algorithm for a given image.
 
         :param img: an gray-scale image as a 2D numpy array.
@@ -91,3 +91,7 @@ class Ratslam(object):
         self.pc[1].append(y_pc)
         self.pc[2].append(th_pc)
         # ----------------------------------------
+
+        # Nengo
+        with self.pose_cells.model:
+            self.pose_cells.simulator.run(elapsed_time)
