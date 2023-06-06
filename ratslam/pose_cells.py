@@ -29,6 +29,9 @@ import itertools
 from ratslam._globals import *
 import nengo
 
+def inhibit(t):
+    return 2.0 if t > 60.0 else 0.0
+
 class PoseCells(object):
     '''Pose Cell module.'''
 
@@ -41,6 +44,7 @@ class PoseCells(object):
         self.view_cell = None
         self.vtrans = 0
         self.vrot = 0
+        self.seed = seed = 12345678
 
         # Nengo Model
         self.model = nengo.Network()
@@ -50,10 +54,11 @@ class PoseCells(object):
             # Nodes for inputs
             self.update_input = nengo.Node(self.get_update_data)
             self.active_input = nengo.Node(self.get_active)
+            self.inhibit_input = nengo.Node(inhibit)
 
             # Ensembles
             ensemble_size = 64
-            self.pre_ensemble = nengo.Ensemble(ensemble_size, dimensions=6)
+            self.pre_ensemble = nengo.Ensemble(ensemble_size, dimensions=6, seed=seed)
             self.post_ensemble = nengo.Ensemble(ensemble_size, dimensions=3)
             self.error_ensemble = nengo.Ensemble(ensemble_size, dimensions=3)
 
@@ -68,9 +73,18 @@ class PoseCells(object):
             self.input_pre_connection = nengo.Connection(self.update_input, self.pre_ensemble)
 
             # Learning rule connection between pre and post ensembles
-            weight_matrix = [[1,1,1,1,1,1], [1,1,1,1,1,1], [1,1,1,1,1,1]]
-            self.pre_post_connection = nengo.Connection(self.pre_ensemble, self.post_ensemble, transform=weight_matrix)
+            try:
+                weight_matrix = np.load("weights.npy")
+                self.pre_post_connection = nengo.Connection(self.pre_ensemble.neurons, self.post_ensemble, transform=weight_matrix)
+                print("Loaded weights from file")
+            except Exception as e:
+                print(e)
+                weight_matrix = [[1,1,1,1,1,1], [1,1,1,1,1,1], [1,1,1,1,1,1]]
+                self.pre_post_connection = nengo.Connection(self.pre_ensemble, self.post_ensemble, transform=weight_matrix)
+                print("Used default weights")
             self.pre_post_connection.learning_rule_type = nengo.PES(learning_rate=3e-4)
+            self.weights_probe = nengo.Probe(self.pre_post_connection)
+            #self.pre_post_connection.solver = LoadFrom("pose_cell_weights")
 
             # Connect error ensemble to connection rule (PES)
             self.error_signal_connection = nengo.Connection(self.error_ensemble, self.pre_post_connection.learning_rule)
@@ -79,8 +93,15 @@ class PoseCells(object):
             self.cells_input_connection = nengo.Connection(self.active_input, self.error_ensemble, transform=-1)
             self.post_error_connection = nengo.Connection(self.post_ensemble, self.error_ensemble)
 
+            # Inhibit learning rule after 60 seconds of sim time
+            #nengo.Connection(self.inhibit_input, self.error_ensemble.neurons, transform=[[-1]] * self.error_ensemble.n_neurons)
+
             # Simulator
-            self.simulator = nengo.Simulator(self.model)
+            self.simulator = nengo.Simulator(self.model, progress_bar=False)
+
+            # Weights Saver
+            #print(self.pre_post_connection.probeable)
+            #self.ws = WeightSaver(self.pre_post_connection, "pose_cell_weights")
 
     def flatten_cells(self, t):
         return self.cells.flatten()

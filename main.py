@@ -51,103 +51,121 @@ if __name__ == '__main__':
     slam = ratslam.Ratslam()
     fps = video.get(cv2.CAP_PROP_FPS)
     time_per_frame = 1/fps
+
+    do_plotting = False
+    video_loops = 0
     
     loop = 0
     _, frame = video.read()
-    while True:
-        loop += 1
+    try:
+        while True:
+            loop += 1
 
-        # RUN A RATSLAM ITERATION ==================================
-        _, frame = video.read()
-        if frame is None: break
+            # RUN A RATSLAM ITERATION ==================================
+            _, frame = video.read()
+            if frame is None:
+                video_loops += 1
+                print(f"Video loop {video_loops} complete, restarting")
+                video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                np.save("weights.npy", slam.pose_cells.simulator.data[slam.pose_cells.pre_post_connection].weights)
+                print("Saved weights to file")
+                slam = ratslam.Ratslam()
+                continue
 
-        img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        slam.digest(img, time_per_frame)
-        # ==========================================================
+            img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            slam.digest(img, time_per_frame)
+            # ==========================================================
 
-        # Plot each 50 frames
-        if loop%50 != 0:
-            continue
+            if not do_plotting:
+                continue
 
-        # PLOT THE CURRENT RESULTS =================================
-        b, g, r = cv2.split(frame)
-        rgb_frame = cv2.merge([r, g, b])
+            # Plot each 50 frames
+            if loop%50 != 0:
+                continue
 
-        plot.clf()
+            # PLOT THE CURRENT RESULTS =================================
+            b, g, r = cv2.split(frame)
+            rgb_frame = cv2.merge([r, g, b])
 
-        # RAW IMAGE -------------------
-        ax = plot.subplot(3, 3, 1)
-        plot.title('RAW IMAGE')
-        plot.imshow(rgb_frame)
-        ax.get_xaxis().set_ticks([])
-        ax.get_yaxis().set_ticks([])
-        # -----------------------------
+            plot.clf()
 
-        # RAW ODOMETRY ----------------
-        plot.subplot(3, 3, 2)
-        plot.title('RAW ODOMETRY')
-        plot.plot(slam.odometry[0], slam.odometry[1])
-        plot.plot(slam.odometry[0][-1], slam.odometry[1][-1], 'ko')
-        #------------------------------
+            # RAW IMAGE -------------------
+            ax = plot.subplot(3, 3, 1)
+            plot.title('RAW IMAGE')
+            plot.imshow(rgb_frame)
+            ax.get_xaxis().set_ticks([])
+            ax.get_yaxis().set_ticks([])
+            # -----------------------------
 
-        # POSE CELL ACTIVATION --------
-        ax = plot.subplot(3, 3, 3, projection='3d')
-        plot.title('POSE CELL ACTIVATION')
-        x, y, th = slam.pc
-        ax.plot(x, y, 'x')
-        ax.plot3D([0, 60], [y[-1], y[-1]], [th[-1], th[-1]], 'k')
-        ax.plot3D([x[-1], x[-1]], [0, 60], [th[-1], th[-1]], 'k')
-        ax.plot3D([x[-1], x[-1]], [y[-1], y[-1]], [0, 36], 'k')
-        ax.plot3D([x[-1]], [y[-1]], [th[-1]], 'mo')
-        ax.grid()
-        ax.axis([0, 60, 0, 60]);
-        ax.set_zlim(0, 36)
-        # -----------------------------
+            # RAW ODOMETRY ----------------
+            plot.subplot(3, 3, 2)
+            plot.title('RAW ODOMETRY')
+            plot.plot(slam.odometry[0], slam.odometry[1])
+            plot.plot(slam.odometry[0][-1], slam.odometry[1][-1], 'ko')
+            #------------------------------
 
-        # EXPERIENCE MAP --------------
-        plot.subplot(3, 3, 4)
-        plot.title('EXPERIENCE MAP')
-        xs = []
-        ys = []
-        for exp in slam.experience_map.exps:
-            xs.append(exp.x_m)
-            ys.append(exp.y_m)
+            # POSE CELL ACTIVATION --------
+            ax = plot.subplot(3, 3, 3, projection='3d')
+            plot.title('POSE CELL ACTIVATION')
+            x, y, th = slam.pc
+            ax.plot(x, y, 'x')
+            ax.plot3D([0, 60], [y[-1], y[-1]], [th[-1], th[-1]], 'k')
+            ax.plot3D([x[-1], x[-1]], [0, 60], [th[-1], th[-1]], 'k')
+            ax.plot3D([x[-1], x[-1]], [y[-1], y[-1]], [0, 36], 'k')
+            ax.plot3D([x[-1]], [y[-1]], [th[-1]], 'mo')
+            ax.grid()
+            ax.axis([0, 60, 0, 60]);
+            ax.set_zlim(0, 36)
+            # -----------------------------
 
-        plot.plot(xs, ys, 'bo')
-        plot.plot(slam.experience_map.current_exp.x_m,
-                  slam.experience_map.current_exp.y_m, 'ko')
-        # -----------------------------
+            # EXPERIENCE MAP --------------
+            plot.subplot(3, 3, 4)
+            plot.title('EXPERIENCE MAP')
+            xs = []
+            ys = []
+            for exp in slam.experience_map.exps:
+                xs.append(exp.x_m)
+                ys.append(exp.y_m)
 
-        plot.subplot(3, 3, 5)
-        plot.title("X Probing")
-        #plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.pre_probe].T[0], c="k", label="Pre")
-        plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.post_probe].T[0], c="b", label="Post")
-        #plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.error_probe].T[0], c="r", label="Error")
-        plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.active_probe].T[0], c="g", label="Active", linewidth=3)
-        plot.legend(loc="best")
+            plot.plot(xs, ys, 'bo')
+            plot.plot(slam.experience_map.current_exp.x_m,
+                    slam.experience_map.current_exp.y_m, 'ko')
+            # -----------------------------
 
-        plot.subplot(3, 3, 6)
-        plot.title("Y Probing")
-        #plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.pre_probe].T[0], c="k", label="Pre")
-        plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.post_probe].T[1], c="b", label="Post")
-        #plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.error_probe].T[0], c="r", label="Error")
-        plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.active_probe].T[1], c="g", label="Active", linewidth=3)
-        plot.legend(loc="best")
+            plot.subplot(3, 3, 5)
+            plot.title("X Probing")
+            #plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.pre_probe].T[0], c="k", label="Pre")
+            plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.post_probe].T[0], c="b", label="Post")
+            #plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.error_probe].T[0], c="r", label="Error")
+            plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.active_probe].T[0], c="g", label="Active", linewidth=3)
+            plot.legend(loc="best")
 
-        plot.subplot(3, 3, 7)
-        plot.title("Th Probing")
-        #plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.pre_probe].T[0], c="k", label="Pre")
-        plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.post_probe].T[2], c="b", label="Post")
-        #plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.error_probe].T[0], c="r", label="Error")
-        plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.active_probe].T[2], c="g", label="Active", linewidth=3)
-        plot.legend(loc="best")
+            plot.subplot(3, 3, 6)
+            plot.title("Y Probing")
+            #plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.pre_probe].T[0], c="k", label="Pre")
+            plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.post_probe].T[1], c="b", label="Post")
+            #plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.error_probe].T[0], c="r", label="Error")
+            plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.active_probe].T[1], c="g", label="Active", linewidth=3)
+            plot.legend(loc="best")
 
-        plot.tight_layout()
-        # plot.savefig('C:\\Users\\Renato\\Desktop\\results\\forgif\\' + '%04d.jpg'%loop)
-        plot.pause(0.1)
-        # ==========================================================
+            plot.subplot(3, 3, 7)
+            plot.title("Th Probing")
+            #plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.pre_probe].T[0], c="k", label="Pre")
+            plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.post_probe].T[2], c="b", label="Post")
+            #plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.error_probe].T[0], c="r", label="Error")
+            plot.plot(slam.pose_cells.simulator.trange(), slam.pose_cells.simulator.data[slam.pose_cells.active_probe].T[2], c="g", label="Active", linewidth=3)
+            plot.legend(loc="best")
 
-    print('DONE!')
-    print('n_ templates:', len(slam.view_cells.cells))
-    print('n_ experiences:', len(slam.experience_map.exps))
-    plot.show()
+            plot.tight_layout()
+            # plot.savefig('C:\\Users\\Renato\\Desktop\\results\\forgif\\' + '%04d.jpg'%loop)
+            plot.pause(0.1)
+            # ==========================================================
+
+    finally:
+        np.save("weights.npy", slam.pose_cells.simulator.data[slam.pose_cells.pre_post_connection].weights)
+        print("Saved weights to file")
+        print('DONE!')
+        #print('n_ templates:', len(slam.view_cells.cells))
+        #print('n_ experiences:', len(slam.experience_map.exps))
+        if do_plotting:
+            plot.show()
